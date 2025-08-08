@@ -49,13 +49,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # 修复 sed 命令的路径，以确保 ArgoCD 能找到 values 文件
-          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice1:$VERSION|" charts/microservice1/environments/dev/microservice1-values.yaml
-          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice1:$VERSION|" charts/microservice1/environments/staging/microservice1-values.yaml
+          # 修正 sed 命令的路径，以确保 ArgoCD 能找到 values 文件
+          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice1:$VERSION|" environments/dev/microservice1-values.yaml
+          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice1:$VERSION|" environments/staging/microservice1-values.yaml
 
           # 在 CI/CD 流程中提交更新
-          git add charts/microservice1/environments/dev/microservice1-values.yaml
-          git add charts/microservice1/environments/staging/microservice1-values.yaml
+          git add environments/dev/microservice1-values.yaml
+          git add environments/staging/microservice1-values.yaml
           git commit -m "chore: Update microservice1 image tags to $VERSION [skip ci]" || true
           git push
 
@@ -76,12 +76,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # 修复 sed 命令的路径，以确保 ArgoCD 能找到 values 文件
-          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice2:$VERSION|" charts/microservice2/environments/dev/microservice2-values.yaml
-          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice2:$VERSION|" charts/microservice2/environments/staging/microservice2-values.yaml
+          # 修正 sed 命令的路径，以确保 ArgoCD 能找到 values 文件
+          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice2:$VERSION|" environments/dev/microservice2-values.yaml
+          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice2:$VERSION|" environments/staging/microservice2-values.yaml
           
           # 在 CI/CD 流程中提交更新
-          git add charts/microservice2/environments/dev/microservice2-values.yaml
-          git add charts/microservice2/environments/staging/microservice2-values.yaml
+          git add environments/dev/microservice2-values.yaml
+          git add environments/staging/microservice2-values.yaml
           git commit -m "chore: Update microservice2 image tags to $VERSION [skip ci]" || true
           git push
