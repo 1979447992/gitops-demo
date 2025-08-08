@@ -1,10 +1,15 @@
-name: CI/CD Pipeline for Microservices (GHCR)
+# 修正了CI/CD Pipeline的GitOps部署逻辑
+
+name: CI/CD Pipeline
+
+# 新增权限配置，确保可以推送到 GHCR
+permissions:
+  contents: write
+  packages: write
 
 on:
   push:
-    branches:
-      - dev
-      - staging
+    branches: [ "dev", "staging" ]
 
 jobs:
   build_and_deploy:
@@ -17,7 +22,8 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '11'
-          distribution: 'adopt'
+          distribution: 'temurin'
+          cache: maven
 
       - name: Log in to GHCR
         uses: docker/login-action@v2
@@ -28,48 +34,54 @@ jobs:
 
       - name: Build and push microservice1 Docker image
         run: |
-          TAG=""
+          VERSION=sit-latest
           if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
-            TAG="dev-latest"
-          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
-            TAG="sit-latest"
+            VERSION=dev-latest
           fi
           
+          echo "Building microservice1 image with version: $VERSION"
+          
           cd microservice1
-          mvn clean package -DskipTests
-          docker build -t ghcr.io/${{ github.repository }}/microservice1:$TAG .
-          docker push ghcr.io/${{ github.repository }}/microservice1:$TAG
-          cd ..
+          docker build -t ghcr.io/${{ github.repository }}/microservice1:$VERSION .
+          docker push ghcr.io/${{ github.repository }}/microservice1:$VERSION
           
+          # 更新 Helm chart values，并提交到 Git
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull origin ${{ github.ref_name }} --rebase
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          sed -i "s|tag: \".*\"|tag: \"$TAG\"|g" "environments/${{ github.ref_name }}/microservice1-values.yaml"
-          git add "environments/${{ github.ref_name }}/microservice1-values.yaml"
-          git commit -m "Update microservice1 image tag to $TAG [skip ci]"
+          # 修复 sed 命令的路径，以确保 ArgoCD 能找到 values 文件
+          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice1:$VERSION|" charts/microservice1/environments/dev/microservice1-values.yaml
+          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice1:$VERSION|" charts/microservice1/environments/staging/microservice1-values.yaml
+
+          # 在 CI/CD 流程中提交更新
+          git add charts/microservice1/environments/dev/microservice1-values.yaml
+          git add charts/microservice1/environments/staging/microservice1-values.yaml
+          git commit -m "chore: Update microservice1 image tags to $VERSION [skip ci]" || true
           git push
 
       - name: Build and push microservice2 Docker image
         run: |
-          TAG=""
+          VERSION=sit-latest
           if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
-            TAG="dev-latest"
-          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
-            TAG="sit-latest"
+            VERSION=dev-latest
           fi
           
+          echo "Building microservice2 image with version: $VERSION"
+          
           cd microservice2
-          mvn clean package -DskipTests
-          docker build -t ghcr.io/${{ github.repository }}/microservice2:$TAG .
-          docker push ghcr.io/${{ github.repository }}/microservice2:$TAG
-          cd ..
+          docker build -t ghcr.io/${{ github.repository }}/microservice2:$VERSION .
+          docker push ghcr.io/${{ github.repository }}/microservice2:$VERSION
           
+          # 更新 Helm chart values，并提交到 Git
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull origin ${{ github.ref_name }} --rebase
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          sed -i "s|tag: \".*\"|tag: \"$TAG\"|g" "environments/${{ github.ref_name }}/microservice2-values.yaml"
-          git add "environments/${{ github.ref_name }}/microservice2-values.yaml"
-          git commit -m "Update microservice2 image tag to $TAG [skip ci]"
+          # 修复 sed 命令的路径，以确保 ArgoCD 能找到 values 文件
+          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice2:$VERSION|" charts/microservice2/environments/dev/microservice2-values.yaml
+          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice2:$VERSION|" charts/microservice2/environments/staging/microservice2-values.yaml
+          
+          # 在 CI/CD 流程中提交更新
+          git add charts/microservice2/environments/dev/microservice2-values.yaml
+          git add charts/microservice2/environments/staging/microservice2-values.yaml
+          git commit -m "chore: Update microservice2 image tags to $VERSION [skip ci]" || true
           git push
