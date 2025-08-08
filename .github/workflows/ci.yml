@@ -45,15 +45,27 @@ jobs:
           docker build -t ghcr.io/${{ github.repository }}/microservice1:$VERSION .
           docker push ghcr.io/${{ github.repository }}/microservice1:$VERSION
           
-          # 更新 Helm chart values，并提交到 Git
+          # 返回仓库根目录
+          cd ..
+          
+          # 检查文件是否存在
+          if [ ! -f environments/dev/microservice1-values.yaml ]; then
+            echo "Error: environments/dev/microservice1-values.yaml not found"
+            exit 1
+          fi
+          if [ ! -f environments/staging/microservice1-values.yaml ]; then
+            echo "Error: environments/staging/microservice1-values.yaml not found"
+            exit 1
+          fi
+          
+          # 更新 Helm 值文件中的 tag
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # 修正 sed 命令的路径，以确保 ArgoCD 能找到 values 文件
-          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice1:$VERSION|" environments/dev/microservice1-values.yaml
-          sed -i "s|image: .*\$|image: ghcr.io/${{ github.repository }}/microservice1:$VERSION|" environments/staging/microservice1-values.yaml
-
-          # 在 CI/CD 流程中提交更新
+          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/dev/microservice1-values.yaml
+          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/staging/microservice1-values.yaml
+          
+          # 提交更新
           git add environments/dev/microservice1-values.yaml
           git add environments/staging/microservice1-values.yaml
           git commit -m "chore: Update microservice1 image tags to $VERSION [skip ci]" || true
