@@ -1,8 +1,5 @@
-# 修正了CI/CD Pipeline的GitOps部署逻辑
-
 name: CI/CD Pipeline
 
-# 新增权限配置，确保可以推送到 GHCR
 permissions:
   contents: write
   packages: write
@@ -84,14 +81,27 @@ jobs:
           docker build -t ghcr.io/${{ github.repository }}/microservice2:$VERSION .
           docker push ghcr.io/${{ github.repository }}/microservice2:$VERSION
           
-          # 更新 Helm chart values，并提交到 Git
+          # 返回仓库根目录
+          cd ..
+          
+          # 检查文件是否存在
+          if [ ! -f environments/dev/microservice2-values.yaml ]; then
+            echo "Error: environments/dev/microservice2-values.yaml not found"
+            exit 1
+          fi
+          if [ ! -f environments/staging/microservice2-values.yaml ]; then
+            echo "Error: environments/staging/microservice2-values.yaml not found"
+            exit 1
+          fi
+          
+          # 更新 Helm 值文件中的 tag
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # 修正 sed 命令的路径，以确保 ArgoCD 能找到 values 文件
           sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/dev/microservice2-values.yaml
           sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/staging/microservice2-values.yaml
-          # 在 CI/CD 流程中提交更新
+          
+          # 提交更新
           git add environments/dev/microservice2-values.yaml
           git add environments/staging/microservice2-values.yaml
           git commit -m "chore: Update microservice2 image tags to $VERSION [skip ci]" || true
