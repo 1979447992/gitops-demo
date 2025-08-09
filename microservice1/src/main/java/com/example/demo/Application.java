@@ -19,6 +19,6 @@ public class Application {
     public String hello() {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return "Hello from Microservice 1 - Current Time: " + now.format(formatter) + " (DEV BRANCH)";
+        return "🧪 SIT测试环境 - Microservice 1 - Current Time: " + now.format(formatter) + " (DEV BRANCH)";
     }
 }
