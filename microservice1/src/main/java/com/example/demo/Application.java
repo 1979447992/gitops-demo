@@ -23,7 +23,7 @@ public class Application {
     public String hello() {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return "🚀 SIT环境自动部署测试 v3.0 - Microservice 1 - Time: " + now.format(formatter) + " (ENV: " + environment.toUpperCase() + ")";
+        return "🚀 SIT环境自动部署测试 2323 - Microservice 1 - Time: " + now.format(formatter) + " (ENV: " + environment.toUpperCase() + ")";
     }
     
     @GetMapping("/health")
