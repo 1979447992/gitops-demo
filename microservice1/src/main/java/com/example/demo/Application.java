@@ -15,6 +15,6 @@ public class Application {
 
     @GetMapping("/")
     public String hello() {
-        return "Hello from Microservice 1 devdev!";
+        return "Hello from Microservice 1 1700!";
     }
 }
