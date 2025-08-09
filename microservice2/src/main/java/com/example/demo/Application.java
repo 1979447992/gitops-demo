@@ -23,6 +23,6 @@ public class Application {
     public String hello() {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return "🔬 SIT集成测试 - Microservice 2 - Current Time: " + now.format(formatter) + " (ENV: " + environment.toUpperCase() + ")";
+        return "🔬 SIT集成测试2326 - Microservice 2 - Current Time: " + now.format(formatter) + " (ENV: " + environment.toUpperCase() + ")";
     }
 }
