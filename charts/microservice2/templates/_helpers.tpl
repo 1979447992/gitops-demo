@@ -21,6 +21,13 @@ Create a default fully qualified app name.
 {{- end }}
 {{- end }}
 
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "microservice2.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
 {{/*
 Create chart name and version as part of the labels
 */}}
