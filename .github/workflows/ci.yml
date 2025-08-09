@@ -1,49 +1,72 @@
 name: CI/CD Pipeline
-
 permissions:
   contents: write
   packages: write
-
 on:
   push:
     branches: [ "dev", "staging" ]
-
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
+        with:
+          fetch-depth: 0  # 获取完整的 Git 历史
+          
       - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
           java-version: '11'
           distribution: 'temurin'
           cache: maven
-
+          
       - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push microservice1 Docker image
+          
+      - name: Set version
+        id: version
         run: |
           VERSION=sit-latest
           if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             VERSION=dev-$(git rev-parse --short HEAD)
           fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building with version: $VERSION"
           
+      - name: Build and push microservice1 Docker image
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
           echo "Building microservice1 image with version: $VERSION"
           
           cd microservice1
           docker build -t ghcr.io/${{ github.repository }}/microservice1:$VERSION .
           docker push ghcr.io/${{ github.repository }}/microservice1:$VERSION
           
-          # 返回仓库根目录
-          cd ..
+      - name: Build and push microservice2 Docker image
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          echo "Building microservice2 image with version: $VERSION"
+          
+          cd microservice2
+          docker build -t ghcr.io/${{ github.repository }}/microservice2:$VERSION .
+          docker push ghcr.io/${{ github.repository }}/microservice2:$VERSION
+          
+      - name: Update Helm values and commit
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          
+          # 配置 Git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # 拉取最新的远程更改以避免冲突
+          git fetch origin
+          git rebase origin/${{ github.ref_name }}
           
           # 检查文件是否存在
           if [ ! -f environments/dev/microservice1-values.yaml ]; then
@@ -54,37 +77,6 @@ jobs:
             echo "Error: environments/staging/microservice1-values.yaml not found"
             exit 1
           fi
-          
-          # 更新 Helm 值文件中的 tag
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
-          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/dev/microservice1-values.yaml
-          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/staging/microservice1-values.yaml
-          
-          # 提交更新
-          git add environments/dev/microservice1-values.yaml
-          git add environments/staging/microservice1-values.yaml
-          git commit -m "chore: Update microservice1 image tags to $VERSION [skip ci]" || true
-          git push
-
-      - name: Build and push microservice2 Docker image
-        run: |
-          VERSION=sit-latest
-          if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
-            VERSION=dev-$(git rev-parse --short HEAD)
-          fi
-          
-          echo "Building microservice2 image with version: $VERSION"
-          
-          cd microservice2
-          docker build -t ghcr.io/${{ github.repository }}/microservice2:$VERSION .
-          docker push ghcr.io/${{ github.repository }}/microservice2:$VERSION
-          
-          # 返回仓库根目录
-          cd ..
-          
-          # 检查文件是否存在
           if [ ! -f environments/dev/microservice2-values.yaml ]; then
             echo "Error: environments/dev/microservice2-values.yaml not found"
             exit 1
@@ -94,15 +86,48 @@ jobs:
             exit 1
           fi
           
-          # 更新 Helm 值文件中的 tag
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
+          # 更新所有 Helm 值文件中的 tag
+          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/dev/microservice1-values.yaml
+          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/staging/microservice1-values.yaml
           sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/dev/microservice2-values.yaml
           sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/staging/microservice2-values.yaml
           
+          # 检查是否有更改
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          
           # 提交更新
+          git add environments/dev/microservice1-values.yaml
+          git add environments/staging/microservice1-values.yaml
           git add environments/dev/microservice2-values.yaml
           git add environments/staging/microservice2-values.yaml
-          git commit -m "chore: Update microservice2 image tags to $VERSION [skip ci]" || true
-          git push
+          
+          # 尝试提交，如果有冲突则重试
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if git commit -m "chore: Update microservice image tags to $VERSION [skip ci]"; then
+              if git push origin ${{ github.ref_name }}; then
+                echo "Successfully pushed changes"
+                break
+              else
+                echo "Push failed, attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+                git fetch origin
+                git rebase origin/${{ github.ref_name }}
+              fi
+            else
+              echo "Nothing to commit"
+              break
+            fi
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            
+            if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+              echo "Failed to push after $MAX_RETRIES attempts"
+              exit 1
+            fi
+            
+            sleep 2
+          done
