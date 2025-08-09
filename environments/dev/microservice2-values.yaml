@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/1979447992/gitops-demo/microservice2
-  tag: "dev-latest"
+  tag: "dev-467ad37"
   pullPolicy: Always
 
 replicaCount: 1
