@@ -1,2 +1,27 @@
 image:
+  repository: 1979447992/microservice2
   tag: "sit-latest"
+  pullPolicy: Always
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  className: "traefik"
+  hosts:
+    - host: microservice2.staging
+      paths:
+        - path: /
+          pathType: Prefix

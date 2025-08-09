@@ -4,17 +4,17 @@ metadata:
   name: microservice2-dev
   namespace: argocd
 spec:
+  destination:
+    namespace: microservice2-dev
+    server: https://kubernetes.default.svc
   project: default
   source:
-    repoURL: https://github.com/1979447992/gitops-demo.git
-    targetRevision: dev
-    path: charts/microservice2
     helm:
       valueFiles:
-        - environments/dev/microservice2-values.yaml
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: microservice2-dev
+        - ../../environments/dev/microservice2-values.yaml
+    path: charts/microservice2
+    repoURL: https://github.com/1979447992/gitops-demo.git
+    targetRevision: main
   syncPolicy:
     automated:
       prune: true
