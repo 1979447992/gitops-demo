@@ -28,18 +28,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: Set version
+      - name: Set version and environment
         id: version
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             VERSION=dev-$(git rev-parse --short HEAD)
+            ENVIRONMENT=dev
           elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
             VERSION=staging-$(git rev-parse --short HEAD)
+            ENVIRONMENT=staging
           else
             VERSION=sit-latest
+            ENVIRONMENT=sit
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building with version: $VERSION"
+          echo "ENVIRONMENT=$ENVIRONMENT" >> $GITHUB_OUTPUT
+          echo "Building with version: $VERSION for environment: $ENVIRONMENT"
           
       - name: Build and push microservice1 Docker image
         run: |
@@ -62,6 +66,9 @@ jobs:
       - name: Update Helm values and commit
         run: |
           VERSION=${{ steps.version.outputs.VERSION }}
+          ENVIRONMENT=${{ steps.version.outputs.ENVIRONMENT }}
+          
+          echo "Updating $ENVIRONMENT environment with version $VERSION"
           
           # 配置 Git
           git config user.name "github-actions[bot]"
@@ -71,29 +78,25 @@ jobs:
           git fetch origin
           git rebase origin/${{ github.ref_name }}
           
-          # 检查文件是否存在
-          if [ ! -f environments/dev/microservice1-values.yaml ]; then
-            echo "Error: environments/dev/microservice1-values.yaml not found"
+          # 只检查和更新当前环境的配置文件
+          if [ ! -f environments/$ENVIRONMENT/microservice1-values.yaml ]; then
+            echo "Error: environments/$ENVIRONMENT/microservice1-values.yaml not found"
             exit 1
           fi
-          if [ ! -f environments/staging/microservice1-values.yaml ]; then
-            echo "Error: environments/staging/microservice1-values.yaml not found"
-            exit 1
-          fi
-          if [ ! -f environments/dev/microservice2-values.yaml ]; then
-            echo "Error: environments/dev/microservice2-values.yaml not found"
-            exit 1
-          fi
-          if [ ! -f environments/staging/microservice2-values.yaml ]; then
-            echo "Error: environments/staging/microservice2-values.yaml not found"
+          if [ ! -f environments/$ENVIRONMENT/microservice2-values.yaml ]; then
+            echo "Error: environments/$ENVIRONMENT/microservice2-values.yaml not found"
             exit 1
           fi
           
-          # 更新所有 Helm 值文件中的 tag
-          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/dev/microservice1-values.yaml
-          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/staging/microservice1-values.yaml
-          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/dev/microservice2-values.yaml
-          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/staging/microservice2-values.yaml
+          # 只更新当前环境的 Helm 值文件中的 tag
+          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/$ENVIRONMENT/microservice1-values.yaml
+          sed -i "s|tag: .*|tag: \"$VERSION\"|" environments/$ENVIRONMENT/microservice2-values.yaml
+          
+          # 显示更改内容用于调试
+          echo "Changes made to microservice1-values.yaml:"
+          cat environments/$ENVIRONMENT/microservice1-values.yaml | grep -A1 -B1 "tag:"
+          echo "Changes made to microservice2-values.yaml:"
+          cat environments/$ENVIRONMENT/microservice2-values.yaml | grep -A1 -B1 "tag:"
           
           # 检查是否有更改
           if git diff --quiet; then
@@ -101,18 +104,20 @@ jobs:
             exit 0
           fi
           
+          # 显示 git diff 用于调试
+          echo "Git diff:"
+          git diff
+          
           # 提交更新
-          git add environments/dev/microservice1-values.yaml
-          git add environments/staging/microservice1-values.yaml
-          git add environments/dev/microservice2-values.yaml
-          git add environments/staging/microservice2-values.yaml
+          git add environments/$ENVIRONMENT/microservice1-values.yaml
+          git add environments/$ENVIRONMENT/microservice2-values.yaml
           
           # 尝试提交，如果有冲突则重试
           MAX_RETRIES=3
           RETRY_COUNT=0
           
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if git commit -m "chore: Update microservice image tags to $VERSION [skip ci]"; then
+            if git commit -m "chore: Update $ENVIRONMENT microservice image tags to $VERSION [skip ci]"; then
               if git push origin ${{ github.ref_name }}; then
                 echo "Successfully pushed changes"
                 break
