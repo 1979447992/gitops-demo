@@ -21,7 +21,7 @@ ingress:
   enabled: true
   className: "traefik"
   hosts:
-    - host: microservice1.local
+    - host: 47.83.121.134
       paths:
         - path: /
           pathType: Prefix
