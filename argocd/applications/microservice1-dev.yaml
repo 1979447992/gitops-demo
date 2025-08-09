@@ -11,7 +11,7 @@ spec:
     path: charts/microservice1
     helm:
       valueFiles:
-        - environments/dev/microservice1-values.yaml
+        - ../../environments/dev/microservice1-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: microservice1-dev
