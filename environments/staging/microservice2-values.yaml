@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/1979447992/gitops-demo/microservice2
-  tag: "staging-67ebdbe"
+  tag: "staging-9cf9726"
   pullPolicy: Always
 
 replicaCount: 1

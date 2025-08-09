@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/1979447992/gitops-demo/microservice1
-  tag: "staging-v3.0-auto-deploy"
+  tag: "staging-9cf9726"
   pullPolicy: Always
 
 replicaCount: 1
