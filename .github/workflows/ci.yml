@@ -31,9 +31,12 @@ jobs:
       - name: Set version
         id: version
         run: |
-          VERSION=sit-latest
           if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             VERSION=dev-$(git rev-parse --short HEAD)
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            VERSION=staging-$(git rev-parse --short HEAD)
+          else
+            VERSION=sit-latest
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Building with version: $VERSION"
