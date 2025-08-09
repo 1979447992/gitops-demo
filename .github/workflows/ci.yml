@@ -33,7 +33,7 @@ jobs:
         run: |
           VERSION=sit-latest
           if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
-            VERSION=dev-latest
+            VERSION=dev-$(git rev-parse --short HEAD)
           fi
           
           echo "Building microservice1 image with version: $VERSION"
@@ -72,7 +72,7 @@ jobs:
         run: |
           VERSION=sit-latest
           if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
-            VERSION=dev-latest
+            VERSION=dev-$(git rev-parse --short HEAD)
           fi
           
           echo "Building microservice2 image with version: $VERSION"
