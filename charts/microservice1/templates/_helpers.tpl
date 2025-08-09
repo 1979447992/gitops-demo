@@ -22,10 +22,18 @@ Create a default fully qualified app name.
 {{- end }}
 
 {{/*
-Create chart name and version as part of the labels
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "microservice1.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Common labels
 */}}
 {{- define "microservice1.labels" -}}
 helm.sh/chart: {{ include "microservice1.chart" . }}
+{{ include "microservice1.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
