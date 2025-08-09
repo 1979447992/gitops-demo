@@ -1,6 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
   name: {{ include "microservice1.fullname" . }}
   labels:
     {{- include "microservice1.labels" . | nindent 4 }}
@@ -11,6 +13,8 @@ spec:
       {{- include "microservice1.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
       labels:
         {{- include "microservice1.selectorLabels" . | nindent 8 }}
     spec:
