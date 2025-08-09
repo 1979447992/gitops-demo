@@ -1,5 +1,5 @@
 image:
-  repository: 1979447992/microservice2
+  repository: ghcr.io/1979447992/gitops-demo/microservice2
   tag: "sit-latest"
   pullPolicy: Always
 
