@@ -1,2 +1,27 @@
 image:
-  tag: "dev-latest"
+  repository: ghcr.io/1979447992/gitops-demo/microservice1
+  tag: "staging-latest"
+  pullPolicy: Always
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  className: "traefik"
+  hosts:
+    - host: microservice1.local
+      paths:
+        - path: /
+          pathType: Prefix
