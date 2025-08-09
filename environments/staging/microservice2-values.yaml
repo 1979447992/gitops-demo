@@ -13,6 +13,10 @@ resources:
     cpu: 250m
     memory: 256Mi
 
+env:
+  - name: APP_ENVIRONMENT
+    value: "SIT"
+
 service:
   type: ClusterIP
   port: 8080
